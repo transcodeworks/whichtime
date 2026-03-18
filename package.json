@@ -1,0 +1,7 @@
+{
+    "name": "whichtime-root",
+    "description": "Root package for the whichtime project",
+    "scripts": {
+        "build:docs": "pnpm --filter whichtime-docs build"
+    }
+}

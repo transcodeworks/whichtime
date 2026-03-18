@@ -1,0 +1,21 @@
+[package]
+name = "whichtime-ffi"
+publish = false
+
+authors.workspace = true
+description.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+name = "whichtime_ffi"
+
+[dependencies]
+uniffi = { workspace = true }
+whichtime = { workspace = true }
+
+[build-dependencies]
+uniffi = { workspace = true, features = ["build"] }

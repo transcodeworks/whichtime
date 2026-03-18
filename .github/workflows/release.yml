@@ -1,0 +1,176 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    validate:
+        name: Validate Release
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.meta.outputs.version }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Determine release version
+              id: meta
+              run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+            - name: Verify tag matches workspace version
+              env:
+                  RELEASE_VERSION: ${{ steps.meta.outputs.version }}
+              run: |
+                  python - <<'PY'
+                  import os
+                  import pathlib
+                  import tomllib
+
+                  cargo = pathlib.Path("Cargo.toml")
+                  data = tomllib.loads(cargo.read_text())
+                  workspace_version = data["workspace"]["package"]["version"]
+                  release_version = os.environ["RELEASE_VERSION"]
+
+                  if workspace_version != release_version:
+                      raise SystemExit(
+                          f"Tag version {release_version} does not match workspace version {workspace_version}"
+                      )
+                  PY
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@master
+              with:
+                  toolchain: stable
+                  components: rustfmt, clippy
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+                  cache-dependency-path: docs/package-lock.json
+
+            - name: Cache cargo registry
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.cargo/bin/
+                      ~/.cargo/registry/index/
+                      ~/.cargo/registry/cache/
+                      ~/.cargo/git/db/
+                      target/
+                  key: ubuntu-release-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: |
+                      ubuntu-release-
+
+            - name: Run tests
+              run: cargo test --workspace --all-features
+
+            - name: Check formatting
+              run: cargo fmt --all -- --check
+
+            - name: Run clippy
+              run: cargo clippy --workspace --all-features -- -D warnings
+
+            - name: Validate crate packaging
+              run: |
+                  cargo package --locked -p whichtime-sys
+                  cargo package --list -p whichtime
+                  cargo package --list -p whichtime-cli
+
+    publish:
+        name: Publish Crates
+        needs: validate
+        runs-on: ubuntu-latest
+        environment:
+            name: crates-io-release
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@master
+              with:
+                  toolchain: stable
+
+            - name: Publish whichtime-sys
+              run: cargo publish --locked -p whichtime-sys --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+
+            - name: Wait for whichtime-sys availability
+              env:
+                  CRATE_NAME: whichtime-sys
+                  CRATE_VERSION: ${{ needs.validate.outputs.version }}
+              run: |
+                  python - <<'PY'
+                  import os
+                  import time
+                  import urllib.error
+                  import urllib.request
+
+                  crate = os.environ["CRATE_NAME"]
+                  version = os.environ["CRATE_VERSION"]
+                  url = f"https://crates.io/api/v1/crates/{crate}/{version}"
+
+                  for attempt in range(30):
+                      try:
+                          with urllib.request.urlopen(url) as response:
+                              if response.status == 200:
+                                  print(f"{crate} {version} is available on crates.io")
+                                  break
+                      except urllib.error.HTTPError:
+                          pass
+                      except urllib.error.URLError:
+                          pass
+
+                      time.sleep(10)
+                  else:
+                      raise SystemExit(f"{crate} {version} did not become available in time")
+                  PY
+
+            - name: Publish whichtime
+              run: cargo publish --locked -p whichtime --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+
+            - name: Wait for whichtime availability
+              env:
+                  CRATE_NAME: whichtime
+                  CRATE_VERSION: ${{ needs.validate.outputs.version }}
+              run: |
+                  python - <<'PY'
+                  import os
+                  import time
+                  import urllib.error
+                  import urllib.request
+
+                  crate = os.environ["CRATE_NAME"]
+                  version = os.environ["CRATE_VERSION"]
+                  url = f"https://crates.io/api/v1/crates/{crate}/{version}"
+
+                  for attempt in range(30):
+                      try:
+                          with urllib.request.urlopen(url) as response:
+                              if response.status == 200:
+                                  print(f"{crate} {version} is available on crates.io")
+                                  break
+                      except urllib.error.HTTPError:
+                          pass
+                      except urllib.error.URLError:
+                          pass
+
+                      time.sleep(10)
+                  else:
+                      raise SystemExit(f"{crate} {version} did not become available in time")
+                  PY
+
+            - name: Publish whichtime-cli
+              run: cargo publish --locked -p whichtime-cli --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"

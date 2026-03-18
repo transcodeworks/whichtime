@@ -1,0 +1,61 @@
+[package]
+categories = ["date-and-time", "parsing"]
+description = "Lower-level parsing engine for natural language date parsing"
+documentation = "https://docs.rs/whichtime-sys"
+homepage.workspace = true
+keywords = ["dates", "natural-language", "parsing", "performance", "time"]
+name = "whichtime-sys"
+readme = "README.md"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+name = "whichtime_sys"
+
+[features]
+default = ["std"]
+std = []
+uniffi = ["dep:uniffi"]
+
+[dependencies]
+# Date and time handling
+chrono = { workspace = true }
+chrono-tz = { workspace = true }
+
+# Pattern matching - using both for comparison
+aho-corasick = "1.1"
+fancy-regex = { workspace = true }
+regex = { workspace = true }
+
+# Perfect hash functions for compile-time dictionaries
+phf = { version = "0.13", features = ["macros"] }
+
+# Bitflags for component tracking
+bitflags = "2.4"
+
+# Small vector optimization for tags
+smallvec = "1.11"
+
+# Serialization
+serde = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# UniFFI - optional, for FFI bindings
+uniffi = { workspace = true, optional = true }
+
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+# Note: whichtime comparison benchmarks disabled until whichtime is updated for stable Rust
+# whichtime = { path = "../whichtime" }
+
+[[bench]]
+harness = false
+name = "comparison"

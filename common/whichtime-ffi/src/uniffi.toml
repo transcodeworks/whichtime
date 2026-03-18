@@ -1,0 +1,53 @@
+# UniFFI Configuration for WhichTime
+# This file configures how UniFFI generates bindings for Swift, Kotlin, and Python.
+
+# =============================================================================
+# Swift Configuration
+# =============================================================================
+[bindings.swift]
+# Generate Codable conformance for all record types
+generate_codable_conformance = true
+# Module name for the generated Swift code
+module_name = "WhichTime"
+# Generate code that is compatible with earlier Swift versions
+ffi_module_name = "whichtimeFFI"
+
+# =============================================================================
+# Kotlin Configuration
+# =============================================================================
+[bindings.kotlin]
+# Package name for generated Kotlin code
+package_name = "works.transcode.whichtime"
+# Enable Android-specific optimizations
+android = true
+# Generate JVM-only code (no Android dependencies)
+# android_cleaner = false
+
+# =============================================================================
+# Python Configuration
+# =============================================================================
+[bindings.python]
+# Module name for the generated Python code
+# The generated module will be named "whichtime"
+
+# =============================================================================
+# Custom Type Mappings (for reference - currently using i64 millis directly)
+# =============================================================================
+# These are kept for reference in case we want to use native Date types
+# in the future instead of i64 milliseconds.
+
+# [bindings.swift.custom_types.LocalDateTime]
+# type_name = "Date"
+# into_custom = "Date(timeIntervalSince1970: Double({}) / 1000.0)"
+# from_custom = "Int64({}.timeIntervalSince1970 * 1000)"
+
+# [bindings.kotlin.custom_types.LocalDateTime]
+# type_name = "java.util.Date"
+# into_custom = "java.util.Date({})"
+# from_custom = "{}.time"
+
+# [bindings.python.custom_types.LocalDateTime]
+# type_name = "datetime.datetime"
+# imports = ["datetime"]
+# into_custom = "datetime.datetime.fromtimestamp({} / 1000.0)"
+# from_custom = "int({}.timestamp() * 1000)"

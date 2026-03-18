@@ -1,0 +1,62 @@
+[package]
+name = "whichtime"
+
+categories = ["date-and-time", "parsing"]
+description = "High-level Rust API for natural language date parsing"
+documentation = "https://docs.rs/whichtime"
+homepage.workspace = true
+keywords = ["chrono-node", "dates", "natural-language", "parsing", "time"]
+readme = "README.md"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+name = "whichtime"
+
+[features]
+alloc = []
+default = ["std"]
+profiling = []
+std = []
+wasm_js = [
+  "js-sys",
+  "serde-wasm-bindgen",
+  "std",
+  "tsify",
+  "wasm-bindgen",
+  "web-time",
+]
+
+[dependencies]
+whichtime-sys = { workspace = true }
+
+# Date and time handling
+chrono = { workspace = true }
+chrono-tz = { workspace = true }
+
+# Pattern matching and regex
+fancy-regex = { workspace = true }
+lazy_static = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# WASM / JS bindings
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { version = "0.3.77", optional = true }
+serde-wasm-bindgen = { version = "0.6.5", optional = true }
+tsify = { version = "0.5.5", default-features = false, features = [
+  "js",
+], optional = true }
+wasm-bindgen = { version = "0.2.93", optional = true }
+web-time = { version = "1.1.0", features = ["serde"], optional = true }
